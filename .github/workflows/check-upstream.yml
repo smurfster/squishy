@@ -1,0 +1,35 @@
+name: Check Upstream
+
+on:
+  schedule:
+    - cron: "0 * * * *"   # hourly
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Add upstream remote
+        run: |
+          git remote add upstream https://github.com/cleverdevil/squishy.git
+          git fetch upstream
+
+      - name: Compare fork to upstream
+        run: |
+          BEHIND=$(git rev-list --count HEAD..upstream/main)
+          echo "Commits behind: $BEHIND"
+          if [ "$BEHIND" -gt 0 ]; then
+            echo "upstream_updated=true" >> $GITHUB_ENV
+          else
+            echo "upstream_updated=false" >> $GITHUB_ENV
+          fi
+
+      - name: Output result
+        run: |
+          echo "Upstream updated: ${{ env.upstream_updated }}"
